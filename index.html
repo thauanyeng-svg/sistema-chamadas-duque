@@ -1,947 +1,383 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Clube de Desbravadores Duque de Caxias</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Clube de Desbravadores</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 
-  <style>
-    body {
-      background: linear-gradient(to bottom right, #f4f1ff, #ebe8ff);
-      font-family: Arial, sans-serif;
-    }
+<style>
+body {
+  background: linear-gradient(to bottom right, #f4f1ff, #ebe8ff);
+  font-family: Arial, sans-serif;
+}
 
-    .dia-btn {
-      background: #f8f6ff;
-      border: 1px solid rgba(49,41,92,.12);
-      color: #31295C;
-      transition: .2s;
-    }
+.tab {
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  background: #eee;
+}
 
-    .dia-btn:hover {
-      background: #dccb8a;
-      transform: scale(1.03);
-    }
+.tab.active {
+  background: #31295C;
+  color: white;
+}
 
-    .dia-selecionado {
-      background: #31295C !important;
-      color: white !important;
-    }
+.dia-btn {
+  background: #f8f6ff;
+  border: 1px solid rgba(49,41,92,.12);
+  color: #31295C;
+}
 
-    .membro-ausente {
-      border: 2px solid #ef4444;
-      color: #ef4444;
-      background: white;
-    }
+.membro-presente {
+  background: #bbf7d0;
+  border: 2px solid #16a34a;
+}
 
-    .membro-presente {
-      border: 2px solid #111827;
-      background: #bbf7d0;
-      color: #111827;
-    }
-  </style>
+.membro-ausente {
+  background: white;
+  border: 2px solid #ef4444;
+}
+</style>
 </head>
 
 <body>
 
-<div class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+<div class="max-w-7xl mx-auto p-4 space-y-5">
 
-  <div class="bg-white rounded-3xl shadow-2xl p-6">
+<!-- HEADER -->
+<div class="bg-white p-5 rounded-3xl shadow">
+  <h1 class="text-3xl font-black text-[#31295C]">Clube de Desbravadores</h1>
 
-    <div class="flex flex-col xl:flex-row gap-6 xl:items-center xl:justify-between">
-
-      <div>
-        <h1 class="text-3xl md:text-4xl font-black text-[#31295C]">
-          Clube de Desbravadores
-        </h1>
-
-        <h2 class="text-2xl md:text-3xl font-black text-[#D5A514]">
-          DUQUE DE CAXIAS
-        </h2>
-
-        <p class="text-zinc-500 mt-2">
-          Sistema de chamadas e relatórios
-        </p>
-      </div>
-
-      <div class="w-full xl:w-[350px]">
-
-        <h3 class="font-black text-[#31295C] mb-3 text-lg">
-          🏆 Ranking de Presença
-        </h3>
-
-        <div id="ranking" class="space-y-2"></div>
-
-      </div>
-
-    </div>
+  <div class="flex flex-wrap gap-2 mt-4">
+    <button class="tab active" onclick="abrirAba('chamada', event)">Chamada</button>
+    <button class="tab" onclick="abrirAba('unidades', event)">Unidades</button>
+    <button class="tab" onclick="abrirAba('historico', event)">Chamadas feitas</button>
+    <button class="tab" onclick="abrirAba('relatorios', event)">Relatórios</button>
   </div>
-
-  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-    <div class="xl:col-span-2 bg-white rounded-3xl shadow-2xl p-6">
-
-      <h2 class="text-3xl font-black text-[#31295C]">
-        📅 Calendário
-      </h2>
-
-      <p class="text-zinc-500 mt-1 mb-5">
-        Selecione um dia para realizar a chamada
-      </p>
-
-      <input
-        type="month"
-        id="mesInput"
-        class="w-full border border-zinc-300 rounded-2xl p-4 text-lg mb-5"
-      />
-
-      <h3
-        id="tituloMes"
-        class="text-3xl font-black text-[#D5A514] mb-5">
-      </h3>
-
-      <div
-        id="calendario"
-        class="grid grid-cols-7 gap-2 md:gap-3 text-center">
-      </div>
-
-    </div>
-
-    <div class="bg-white rounded-3xl shadow-2xl p-6">
-
-      <h2 class="text-3xl font-black text-[#31295C] mb-5">
-        📋 Chamada do Dia
-      </h2>
-
-      <div
-        id="dataSelecionadaTexto"
-        class="bg-[#31295C] text-white px-4 py-3 rounded-2xl text-center font-bold mb-5">
-
-        Nenhum dia selecionado
-
-      </div>
-
-      <div id="listaChamada" class="space-y-4"></div>
-
-      <div class="flex gap-3 mt-6">
-
-        <button
-          onclick="salvarChamada()"
-          class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl text-lg font-bold">
-
-          💾 Salvar Chamada
-
-        </button>
-
-        <button
-          onclick="abrirChamadas()"
-          class="bg-[#31295C] hover:bg-[#241d45] text-white px-6 py-4 rounded-2xl text-lg font-bold whitespace-nowrap">
-
-          📚 Chamadas
-
-        </button>
-
-      </div>
-
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-    <div class="bg-white rounded-3xl shadow-2xl p-6">
-
-      <h2 class="text-3xl font-black text-[#31295C] mb-1">
-        📥 Relatórios
-      </h2>
-
-      <p class="text-zinc-500 mb-5">
-        Baixe relatórios personalizados
-      </p>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
-
-        <input
-          type="date"
-          id="inicioRelatorio"
-          class="border border-zinc-300 rounded-2xl p-4">
-
-        <input
-          type="date"
-          id="fimRelatorio"
-          class="border border-zinc-300 rounded-2xl p-4">
-
-      </div>
-
-      <button
-        onclick="baixarRelatorio()"
-        class="w-full bg-zinc-800 hover:bg-black text-white py-4 rounded-2xl font-bold">
-
-        ⬇️ Baixar Relatório
-
-      </button>
-
-    </div>
-
-    <div class="bg-white rounded-3xl shadow-2xl p-6">
-
-      <h2 class="text-3xl font-black text-[#31295C] mb-1">
-        🧭 Unidades
-      </h2>
-
-      <p class="text-zinc-500 mb-5">
-        Cadastro base dos desbravadores
-      </p>
-
-      <div class="grid grid-cols-2 gap-2 mb-3">
-
-        <input
-          id="nomeUnidade"
-          placeholder="Unidade"
-          class="border border-zinc-300 rounded-xl p-3 text-sm" />
-
-        <input
-          id="nomeMembro"
-          placeholder="Membro"
-          class="border border-zinc-300 rounded-xl p-3 text-sm" />
-
-      </div>
-
-      <button
-        onclick="adicionarMembro()"
-        class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold text-sm mb-5">
-
-        ➕ Adicionar
-
-      </button>
-
-      <div id="unidades" class="space-y-4"></div>
-
-    </div>
-
-  </div>
-
 </div>
 
-<div
-  id="modalChamadas"
-  class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+<!-- CHAMADA -->
+<div id="aba-chamada">
 
-  <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+  <div class="bg-white p-5 rounded-3xl shadow">
+    <h2 class="text-xl font-black">📅 Calendário</h2>
 
-    <div class="flex items-center justify-between mb-6">
+    <input type="month" id="mesInput" class="border p-2 rounded w-full my-3"/>
 
-      <h2 class="text-3xl font-black text-[#31295C]">
-        📚 Chamadas Salvas
-      </h2>
+    <div id="calendario" class="grid grid-cols-7 gap-2"></div>
+  </div>
 
-      <button
-        onclick="fecharChamadas()"
-        class="text-zinc-500 hover:text-black text-2xl">
-        ✖
-      </button>
+  <div class="bg-white p-5 rounded-3xl shadow mt-4">
 
+    <h2 class="text-xl font-black">📋 Chamada do dia</h2>
+
+    <div id="dataSelecionada" class="font-bold my-3">
+      Nenhum dia selecionado
     </div>
 
-    <div id="listaChamadasModal" class="space-y-3"></div>
+    <button onclick="toggleUnidades()" class="bg-[#31295C] text-white px-4 py-2 rounded-xl mb-3">
+      Abrir / Fechar todas unidades
+    </button>
+
+    <div id="listaChamada"></div>
+
+    <button onclick="salvarChamada()" class="w-full mt-4 bg-green-600 text-white py-3 rounded-xl font-bold">
+      Salvar chamada
+    </button>
 
   </div>
 </div>
 
-<div
-  id="modalDetalhe"
-  class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+<!-- UNIDADES -->
+<div id="aba-unidades" class="hidden bg-white p-5 rounded-3xl shadow">
+  <h2 class="text-xl font-black">🏕️ Unidades</h2>
 
-  <div class="bg-white w-full max-w-3xl rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+  <input id="uNome" placeholder="Unidade" class="border p-2 rounded w-full mb-2"/>
+  <input id="mNome" placeholder="Membro" class="border p-2 rounded w-full mb-2"/>
 
-    <div class="flex items-center justify-between mb-6">
+  <button onclick="addMembro()" class="bg-orange-500 text-white px-4 py-2 rounded-xl">
+    Adicionar
+  </button>
 
-      <h2
-        id="tituloDetalhe"
-        class="text-3xl font-black text-[#31295C]">
-      </h2>
+  <div id="unidades" class="mt-4"></div>
+</div>
 
-      <button
-        onclick="fecharDetalhe()"
-        class="text-zinc-500 hover:text-black text-2xl">
-        ✖
-      </button>
+<!-- HISTÓRICO -->
+<div id="aba-historico" class="hidden bg-white p-5 rounded-3xl shadow">
+  <h2 class="text-xl font-black">📚 Chamadas feitas</h2>
+  <div id="historico"></div>
+</div>
 
+<!-- RELATÓRIOS -->
+<div id="aba-relatorios" class="hidden bg-white p-5 rounded-3xl shadow">
+  <h2 class="text-xl font-black">📊 Relatórios</h2>
+
+  <input type="date" id="ini" class="border p-2 rounded w-full mb-2"/>
+  <input type="date" id="fim" class="border p-2 rounded w-full mb-2"/>
+
+  <button onclick="baixarRelatorio()" class="bg-black text-white px-4 py-3 rounded-xl w-full">
+    Baixar relatório
+  </button>
+</div>
+
+</div>
+
+<!-- MODAL DETALHE -->
+<div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
+  <div class="bg-white w-full max-w-2xl p-5 rounded-2xl">
+    <div class="flex justify-between mb-3">
+      <h3 class="font-black">Detalhe da Chamada</h3>
+      <button onclick="fecharModal()">✖</button>
     </div>
-
-    <div id="conteudoDetalhe" class="space-y-5"></div>
-
+    <div id="modalContent"></div>
   </div>
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-
 import {
   getFirestore,
   doc,
-  setDoc,
-  getDoc
+  onSnapshot,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "SUA_API_KEY",
-  authDomain: "SEU_AUTH_DOMAIN",
-  projectId: "SEU_PROJECT_ID",
-  storageBucket: "SEU_STORAGE_BUCKET",
-  messagingSenderId: "SEU_MESSAGING_ID",
-  appId: "SEU_APP_ID"
+  authDomain: "chamada-duque.firebaseapp.com",
+  projectId: "chamada-duque",
+  storageBucket: "chamada-duque.firebaseapp.com",
+  messagingSenderId: "460760553464",
+  appId: "1:460760553464:web:fffe6768e9d2617b10a80d"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const ref = doc(db, "sistema", "dados");
 
 let unidades = {};
 let chamadas = [];
 let dataSelecionada = null;
 
-const meses = [
-  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
-];
+/* REALTIME */
+onSnapshot(ref, snap => {
+  if(snap.exists()){
+    const d = snap.data();
+    unidades = d.unidades || {};
+    chamadas = d.chamadas || [];
+    renderAll();
+  }
+});
 
-async function carregarBanco() {
+async function save(){
+  await setDoc(ref,{unidades,chamadas});
+}
 
-  const docRef = doc(db, "sistema", "dados");
-  const docSnap = await getDoc(docRef);
+/* ABAS */
+window.abrirAba = (aba,e)=>{
+  document.querySelectorAll('[id^="aba-"]').forEach(a=>a.classList.add('hidden'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
 
-  if (docSnap.exists()) {
+  document.getElementById('aba-'+aba).classList.remove('hidden');
+  e.target.classList.add('active');
+};
 
-    const dados = docSnap.data();
+/* CALENDÁRIO */
+function gerarCalendario(){
 
-    unidades = dados.unidades || {};
-    chamadas = dados.chamadas || [];
+  const v = document.getElementById('mesInput').value;
+  const [a,m] = v.split('-').map(Number);
+
+  const cal = document.getElementById('calendario');
+  cal.innerHTML='';
+
+  const semana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  semana.forEach(d=>{
+    cal.innerHTML+=`<div class="font-bold text-center">${d}</div>`;
+  });
+
+  const primeiro = new Date(a,m-1,1).getDay();
+  const total = new Date(a,m,0).getDate();
+
+  for(let i=0;i<primeiro;i++){
+    cal.innerHTML+='<div></div>';
   }
 
-  renderUnidades();
+  for(let d=1;d<=total;d++){
+    cal.innerHTML+=`
+      <button class="dia-btn p-2 rounded-xl"
+        onclick="selecionar(${d},this)">
+        ${d}
+      </button>`;
+  }
+}
+
+window.selecionar = (d,el)=>{
+
+  document.querySelectorAll('.dia-btn')
+    .forEach(b=>b.classList.remove('bg-[#31295C]','text-white'));
+
+  el.classList.add('bg-[#31295C]','text-white');
+
+  const v = document.getElementById('mesInput').value;
+  const [a,m] = v.split('-');
+
+  dataSelecionada = `${a}-${m}-${String(d).padStart(2,'0')}`;
+
+  document.getElementById('dataSelecionada').innerText =
+    `Selecionado: ${dataSelecionada}`;
+
   renderChamada();
-  atualizarRanking();
-}
+};
 
-async function salvarBanco() {
+document.getElementById('mesInput').onchange=gerarCalendario;
 
-  await setDoc(doc(db, "sistema", "dados"), {
-    unidades,
-    chamadas
-  });
-}
+/* CHAMADA */
+function renderChamada(){
 
-function iniciar() {
+  const el=document.getElementById('listaChamada');
+  el.innerHTML='';
 
-  const hoje = new Date();
+  Object.keys(unidades).forEach(u=>{
 
-  document.getElementById('mesInput').value =
-    `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
+    el.innerHTML+=`
+      <details class="border p-2 rounded-xl my-2">
+        <summary class="font-black">${u}</summary>
 
-  document.getElementById('inicioRelatorio').value =
-    `${hoje.getFullYear()}-01-01`;
-
-  document.getElementById('fimRelatorio').value =
-    `${hoje.getFullYear()}-12-31`;
-
-  gerarCalendario();
-
-  document.getElementById('mesInput')
-    .addEventListener('change', gerarCalendario);
-}
-
-function gerarCalendario() {
-
-  const valor = document.getElementById('mesInput').value;
-
-  const [ano, mes] = valor.split('-');
-
-  document.getElementById('tituloMes').innerText =
-    `${meses[parseInt(mes)-1]} de ${ano}`;
-
-  const calendario = document.getElementById('calendario');
-
-  calendario.innerHTML = `
-    <div class="font-bold text-[#31295C] py-2">Dom</div>
-    <div class="font-bold text-[#31295C] py-2">Seg</div>
-    <div class="font-bold text-[#31295C] py-2">Ter</div>
-    <div class="font-bold text-[#31295C] py-2">Qua</div>
-    <div class="font-bold text-[#31295C] py-2">Qui</div>
-    <div class="font-bold text-[#31295C] py-2">Sex</div>
-    <div class="font-bold text-[#31295C] py-2">Sáb</div>
-  `;
-
-  const primeiroDia = new Date(ano, mes - 1, 1).getDay();
-  const diasMes = new Date(ano, mes, 0).getDate();
-
-  for(let i = 0; i < primeiroDia; i++) {
-    calendario.innerHTML += `<div></div>`;
-  }
-
-  for(let dia = 1; dia <= diasMes; dia++) {
-
-    calendario.innerHTML += `
-      <button
-        onclick="selecionarDia(${dia}, this)"
-        class="dia-btn aspect-square rounded-2xl font-bold min-h-[55px] md:min-h-[80px] text-sm md:text-lg">
-        ${dia}
-      </button>
-    `;
-  }
-}
-
-window.selecionarDia = function(dia, botao) {
-
-  document.querySelectorAll('.dia-btn').forEach(btn => {
-    btn.classList.remove('dia-selecionado');
-  });
-
-  botao.classList.add('dia-selecionado');
-
-  const valor = document.getElementById('mesInput').value;
-  const [ano, mes] = valor.split('-');
-
-  dataSelecionada = `${ano}-${mes}-${String(dia).padStart(2,'0')}`;
-
-  document.getElementById('dataSelecionadaTexto').innerText =
-    `Chamada de ${dia}/${mes}/${ano}`;
-}
-
-function renderUnidades() {
-
-  const container = document.getElementById('unidades');
-
-  container.innerHTML = '';
-
-  Object.keys(unidades).forEach(unidade => {
-
-    container.innerHTML += `
-
-      <details class="border border-zinc-200 rounded-2xl overflow-hidden bg-white shadow-sm">
-
-        <summary class="cursor-pointer list-none px-4 py-4 flex items-center justify-between hover:bg-zinc-50">
-
-          <div>
-            <h3 class="font-black text-lg text-[#31295C]">
-              ${unidade}
-            </h3>
-          </div>
-
-          <span class="bg-[#DCCB8A] text-[#31295C] px-3 py-1 rounded-full text-xs font-bold">
-            ${unidades[unidade].length} membros
-          </span>
-
-        </summary>
-
-        <div class="p-4 border-t border-zinc-100">
-
-          <div class="space-y-2 mb-4">
-
-            ${unidades[unidade].map((membro, index) => `
-
-              <div class="flex items-center justify-between bg-[#F4F1FF] rounded-xl px-3 py-2">
-
-                <span class="font-semibold text-[#31295C]">
-                  ${membro}
-                </span>
-
-                <div class="flex gap-2">
-
-                  <button
-                    onclick="editarMembro('${unidade}', ${index})"
-                    class="text-blue-600 hover:text-blue-800">
-                    ✏️
-                  </button>
-
-                  <button
-                    onclick="excluirMembro('${unidade}', ${index})"
-                    class="text-red-600 hover:text-red-800">
-                    🗑️
-                  </button>
-
-                </div>
-
-              </div>
-
-            `).join('')}
-
-          </div>
-
-          <div class="flex gap-2 flex-wrap">
-
-            <button
-              onclick="editarUnidade('${unidade}')"
-              class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-xl text-sm font-bold">
-              ✏️ Editar Unidade
-            </button>
-
-            <button
-              onclick="excluirUnidade('${unidade}')"
-              class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-xl text-sm font-bold">
-              🗑️ Excluir Unidade
-            </button>
-
-          </div>
-        </div>
-      </details>
-    `;
-  });
-}
-
-function renderChamada() {
-
-  const container = document.getElementById('listaChamada');
-
-  container.innerHTML = `
-
-    <button
-      onclick="toggleTodasUnidades()"
-      class="w-full bg-[#31295C] hover:bg-[#241d45] text-white py-3 rounded-2xl font-bold mb-4">
-      🔽 Abrir / Fechar Todas as Unidades
-    </button>
-
-  `;
-
-  Object.keys(unidades).forEach(unidade => {
-
-    container.innerHTML += `
-
-      <details class="grupo-unidade border border-zinc-200 rounded-2xl overflow-hidden">
-
-        <summary class="cursor-pointer list-none px-4 py-4 bg-white hover:bg-zinc-50 flex items-center justify-between">
-
-          <h3 class="font-black text-lg text-[#31295C]">
-            ${unidade}
-          </h3>
-
-          <span class="text-zinc-400">▼</span>
-
-        </summary>
-
-        <div class="p-4 border-t border-zinc-100 grid gap-3">
-
-          ${unidades[unidade].map(membro => `
-
-            <button
-              onclick="togglePresenca(this)"
-              data-membro="${membro}"
-              data-unidade="${unidade}"
-              class="membro-ausente rounded-2xl px-4 py-3 text-left font-bold transition-all">
-              ${membro}
-            </button>
-
+        <div class="mt-2 space-y-2">
+          ${(unidades[u]||[]).map(m=>`
+            <div onclick="toggle(this)"
+              data-u="${u}" data-m="${m}"
+              class="membro-ausente p-3 rounded-xl cursor-pointer">
+              ${m}
+            </div>
           `).join('')}
-
         </div>
       </details>
     `;
   });
 }
 
-window.toggleTodasUnidades = function() {
+window.toggle = el=>{
+  el.classList.toggle('membro-presente');
+  el.classList.toggle('membro-ausente');
+};
 
-  document.querySelectorAll('.grupo-unidade').forEach(item => {
-    item.open = !item.open;
-  });
-}
+window.toggleUnidades=()=>{
+  document.querySelectorAll('details')
+    .forEach(d=>d.open=!d.open);
+};
 
-window.togglePresenca = function(botao) {
+/* SALVAR */
+window.salvarChamada=async()=>{
 
-  botao.classList.toggle('membro-presente');
-  botao.classList.toggle('membro-ausente');
-}
+  if(!dataSelecionada) return alert("Selecione data");
 
-window.adicionarMembro = async function() {
+  const registros={};
 
-  const unidade = document.getElementById('nomeUnidade').value.trim();
-  const membro = document.getElementById('nomeMembro').value.trim();
+  document.querySelectorAll('[data-m]').forEach(b=>{
+    const u=b.dataset.u;
+    const m=b.dataset.m;
 
-  if(!unidade || !membro) {
-    alert('Preencha os campos');
-    return;
-  }
+    if(!registros[u]) registros[u]=[];
 
-  if(!unidades[unidade]) {
-    unidades[unidade] = [];
-  }
-
-  if(!unidades[unidade].includes(membro)) {
-    unidades[unidade].push(membro);
-  }
-
-  await salvarBanco();
-
-  document.getElementById('nomeUnidade').value = '';
-  document.getElementById('nomeMembro').value = '';
-
-  renderUnidades();
-  renderChamada();
-  atualizarRanking();
-}
-
-window.editarMembro = async function(unidade, index) {
-
-  const novoNome = prompt(
-    'Novo nome do membro:',
-    unidades[unidade][index]
-  );
-
-  if(!novoNome) return;
-
-  unidades[unidade][index] = novoNome;
-
-  await salvarBanco();
-
-  renderUnidades();
-  renderChamada();
-  atualizarRanking();
-}
-
-window.excluirMembro = async function(unidade, index) {
-
-  if(!confirm('Excluir membro?')) return;
-
-  unidades[unidade].splice(index, 1);
-
-  await salvarBanco();
-
-  renderUnidades();
-  renderChamada();
-  atualizarRanking();
-}
-
-window.editarUnidade = async function(unidade) {
-
-  const novoNome = prompt(
-    'Novo nome da unidade:',
-    unidade
-  );
-
-  if(!novoNome || novoNome === unidade) return;
-
-  unidades[novoNome] = unidades[unidade];
-
-  delete unidades[unidade];
-
-  await salvarBanco();
-
-  renderUnidades();
-  renderChamada();
-  atualizarRanking();
-}
-
-window.excluirUnidade = async function(unidade) {
-
-  if(!confirm('Excluir unidade inteira?')) return;
-
-  delete unidades[unidade];
-
-  await salvarBanco();
-
-  renderUnidades();
-  renderChamada();
-  atualizarRanking();
-}
-
-window.salvarChamada = async function() {
-
-  if(!dataSelecionada) {
-    alert('Selecione um dia');
-    return;
-  }
-
-  const registros = {};
-
-  document.querySelectorAll('[data-membro]').forEach(btn => {
-
-    const unidade = btn.dataset.unidade;
-    const membro = btn.dataset.membro;
-
-    if(!registros[unidade]) {
-      registros[unidade] = [];
-    }
-
-    registros[unidade].push({
-      nome: membro,
-      presente: btn.classList.contains('membro-presente')
+    registros[u].push({
+      nome:m,
+      presente:b.classList.contains('membro-presente')
     });
   });
 
-  chamadas.push({
-    data: dataSelecionada,
-    registros
-  });
+  chamadas.push({data:dataSelecionada,registros});
+  await save();
 
-  await salvarBanco();
+  alert("Salvo!");
+};
 
-  atualizarRanking();
+/* HISTÓRICO */
+function renderHistorico(){
 
-  alert('✅ Chamada salva!');
-}
+  const el=document.getElementById('historico');
 
-function atualizarRanking() {
+  el.innerHTML=chamadas.map((c,i)=>`
 
-  const ranking = document.getElementById('ranking');
+    <div class="flex justify-between border p-2 rounded-xl mb-2">
 
-  let dados = [];
+      <button onclick="abrirDetalhe(${i})">
+        📅 ${c.data}
+      </button>
 
-  Object.keys(unidades).forEach(unidade => {
-
-    let total = 0;
-    let presentes = 0;
-
-    chamadas.forEach(chamada => {
-
-      if(chamada.registros[unidade]) {
-
-        chamada.registros[unidade].forEach(item => {
-
-          total++;
-
-          if(item.presente) {
-            presentes++;
-          }
-
-        });
-      }
-    });
-
-    const porcentagem =
-      total > 0
-      ? Math.round((presentes / total) * 100)
-      : 0;
-
-    dados.push({
-      unidade,
-      porcentagem
-    });
-  });
-
-  dados.sort((a,b) => b.porcentagem - a.porcentagem);
-
-  ranking.innerHTML = dados.map((item, index) => `
-
-    <div class="bg-white border border-zinc-200 rounded-2xl px-4 py-3 flex items-center justify-between">
-
-      <div>
-        <p class="font-black text-[#31295C]">
-          ${index + 1}º ${item.unidade}
-        </p>
-      </div>
-
-      <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-black">
-        ${item.porcentagem}%
-      </span>
+      <button onclick="excluir(${i})" class="text-red-500">
+        ✖
+      </button>
 
     </div>
 
   `).join('');
 }
 
-window.baixarRelatorio = function() {
+window.excluir=async(i)=>{
+  chamadas.splice(i,1);
+  await save();
+};
 
-  const inicio = document.getElementById('inicioRelatorio').value;
-  const fim = document.getElementById('fimRelatorio').value;
+window.abrirDetalhe=(i)=>{
 
-  let texto = `
-RELATÓRIO DE CHAMADAS
-CLUBE DE DESBRAVADORES DUQUE DE CAXIAS
+  const c=chamadas[i];
 
-`;
+  let html=`<h3 class="font-black mb-3">${c.data}</h3>`;
 
-  chamadas
-    .filter(chamada =>
-      chamada.data >= inicio &&
-      chamada.data <= fim
-    )
-    .forEach(chamada => {
+  Object.keys(c.registros).forEach(u=>{
 
-      texto += `\n=====================================\n`;
-      texto += `DATA: ${chamada.data}\n`;
-      texto += `=====================================\n\n`;
-
-      Object.keys(chamada.registros).forEach(unidade => {
-
-        texto += `UNIDADE: ${unidade}\n\n`;
-
-        chamada.registros[unidade].forEach(item => {
-
-          texto += `${item.presente ? '✅' : '❌'} ${item.nome}\n`;
-
-        });
-
-        texto += `\n`;
-      });
-    });
-
-  const blob = new Blob([texto], { type: 'text/plain' });
-
-  const link = document.createElement('a');
-
-  link.href = URL.createObjectURL(blob);
-
-  link.download = 'relatorio-duque-de-caxias.txt';
-
-  link.click();
-}
-
-window.abrirChamadas = function() {
-
-  const modal = document.getElementById('modalChamadas');
-
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-
-  renderListaChamadas();
-}
-
-window.fecharChamadas = function() {
-
-  const modal = document.getElementById('modalChamadas');
-
-  modal.classList.add('hidden');
-  modal.classList.remove('flex');
-}
-
-function renderListaChamadas() {
-
-  const container = document.getElementById('listaChamadasModal');
-
-  container.innerHTML = '';
-
-  if(chamadas.length === 0) {
-
-    container.innerHTML = `
-      <div class="text-center text-zinc-500 py-10">
-        Nenhuma chamada salva ainda.
-      </div>
-    `;
-
-    return;
-  }
-
-  chamadas
-    .slice()
-    .reverse()
-    .forEach((chamada, index) => {
-
-      container.innerHTML += `
-
-        <button
-          onclick="abrirDetalheChamada(${chamadas.length - 1 - index})"
-          class="w-full border border-zinc-200 hover:border-[#31295C] hover:bg-[#F4F1FF] rounded-2xl p-4 text-left transition">
-
-          <div class="flex items-center justify-between gap-3 flex-wrap">
-
-            <div>
-
-              <h3 class="font-black text-[#31295C] text-lg">
-                📅 ${formatarData(chamada.data)}
-              </h3>
-
-              <p class="text-zinc-500 text-sm mt-1">
-                Clique para visualizar a chamada
-              </p>
-
-            </div>
-
-            <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-bold">
-              ${Object.keys(chamada.registros).length} unidades
-            </span>
-
-          </div>
-
-        </button>
-
-      `;
-    });
-}
-
-window.abrirDetalheChamada = function(index) {
-
-  const chamada = chamadas[index];
-
-  document.getElementById('tituloDetalhe').innerText =
-    `📋 Chamada - ${formatarData(chamada.data)}`;
-
-  const container = document.getElementById('conteudoDetalhe');
-
-  container.innerHTML = '';
-
-  Object.keys(chamada.registros).forEach(unidade => {
-
-    container.innerHTML += `
-
-      <div class="border border-zinc-200 rounded-2xl p-5">
-
-        <h3 class="text-2xl font-black text-[#31295C] mb-4">
-          ${unidade}
-        </h3>
-
-        <div class="space-y-2">
-
-          ${chamada.registros[unidade].map(item => `
-
-            <div class="
-              flex items-center justify-between
-              rounded-xl px-4 py-3
-              ${item.presente
-                ? 'bg-emerald-100 border border-emerald-300'
-                : 'bg-red-50 border border-red-200'
-              }
-            ">
-
-              <span class="font-semibold">
-                ${item.nome}
-              </span>
-
-              <span class="font-black">
-                ${item.presente ? '✅ Presente' : '❌ Ausente'}
-              </span>
-
-            </div>
-
-          `).join('')}
-
+    html+=`<div class="border p-3 mb-3">
+      <b>${u}</b>
+      ${c.registros[u].map(m=>`
+        <div class="flex justify-between text-sm">
+          <span>${m.nome}</span>
+          <span>${m.presente?'✔':'✖'}</span>
         </div>
-
-      </div>
-
-    `;
+      `).join('')}
+    </div>`;
   });
 
-  document.getElementById('modalDetalhe')
-    .classList.remove('hidden');
+  document.getElementById('modalContent').innerHTML=html;
+  document.getElementById('modal').classList.remove('hidden');
+};
 
-  document.getElementById('modalDetalhe')
-    .classList.add('flex');
+window.fecharModal=()=>{
+  document.getElementById('modal').classList.add('hidden');
+};
+
+/* RELATÓRIO */
+window.baixarRelatorio=()=>{
+  let txt="";
+  chamadas.forEach(c=>txt+=c.data+"\n");
+
+  const blob=new Blob([txt],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download="relatorio.txt";
+  a.click();
+};
+
+/* INIT */
+function renderAll(){
+  renderChamada();
+  renderHistorico();
 }
 
-window.fecharDetalhe = function() {
-
-  document.getElementById('modalDetalhe')
-    .classList.add('hidden');
-
-  document.getElementById('modalDetalhe')
-    .classList.remove('flex');
+function init(){
+  document.getElementById('mesInput').value=new Date().toISOString().slice(0,7);
+  gerarCalendario();
 }
 
-function formatarData(data) {
-
-  const [ano, mes, dia] = data.split('-');
-
-  return `${dia}/${mes}/${ano}`;
-}
-
-window.addEventListener('DOMContentLoaded', async () => {
-  await carregarBanco();
-  iniciar();
-});
+init();
 
 </script>
 
 </body>
 </html>
-Feito com amor 💜
