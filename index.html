@@ -94,6 +94,7 @@ body {
 
 <!-- UNIDADES -->
 <div id="aba-unidades" class="hidden bg-white p-5 rounded-3xl shadow">
+
   <h2 class="text-xl font-black">🏕️ Unidades</h2>
 
   <input id="uNome" placeholder="Unidade" class="border p-2 rounded w-full mb-2"/>
@@ -103,17 +104,20 @@ body {
     Adicionar
   </button>
 
-  <div id="unidades" class="mt-4"></div>
+  <div id="unidades" class="mt-4 space-y-4"></div>
 </div>
 
 <!-- HISTÓRICO -->
 <div id="aba-historico" class="hidden bg-white p-5 rounded-3xl shadow">
+
   <h2 class="text-xl font-black">📚 Chamadas feitas</h2>
   <div id="historico"></div>
+
 </div>
 
 <!-- RELATÓRIOS -->
 <div id="aba-relatorios" class="hidden bg-white p-5 rounded-3xl shadow">
+
   <h2 class="text-xl font-black">📊 Relatórios</h2>
 
   <input type="date" id="ini" class="border p-2 rounded w-full mb-2"/>
@@ -122,11 +126,12 @@ body {
   <button onclick="baixarRelatorio()" class="bg-black text-white px-4 py-3 rounded-xl w-full">
     Baixar relatório
   </button>
-</div>
 
 </div>
 
-<!-- MODAL DETALHE -->
+</div>
+
+<!-- MODAL -->
 <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
   <div class="bg-white w-full max-w-2xl p-5 rounded-2xl">
     <div class="flex justify-between mb-3">
@@ -164,7 +169,7 @@ let unidades = {};
 let chamadas = [];
 let dataSelecionada = null;
 
-/* REALTIME */
+/* FIREBASE */
 onSnapshot(ref, snap => {
   if(snap.exists()){
     const d = snap.data();
@@ -204,9 +209,7 @@ function gerarCalendario(){
   const primeiro = new Date(a,m-1,1).getDay();
   const total = new Date(a,m,0).getDate();
 
-  for(let i=0;i<primeiro;i++){
-    cal.innerHTML+='<div></div>';
-  }
+  for(let i=0;i<primeiro;i++) cal.innerHTML+='<div></div>';
 
   for(let d=1;d<=total;d++){
     cal.innerHTML+=`
@@ -298,7 +301,87 @@ window.salvarChamada=async()=>{
   alert("Salvo!");
 };
 
-/* HISTÓRICO */
+/* UNIDADES (NOVO) */
+window.addMembro = async ()=>{
+
+  const u = document.getElementById('uNome').value.trim();
+  const m = document.getElementById('mNome').value.trim();
+
+  if(!u || !m) return alert("Preencha tudo");
+
+  if(!unidades[u]) unidades[u]=[];
+
+  unidades[u].push(m);
+
+  await save();
+
+  document.getElementById('uNome').value='';
+  document.getElementById('mNome').value='';
+};
+
+/* RENDER UNIDADES (NOVO) */
+function renderUnidades(){
+
+  const el = document.getElementById('unidades');
+  el.innerHTML='';
+
+  Object.keys(unidades).forEach(u=>{
+
+    el.innerHTML+=`
+      <div class="border rounded-xl p-3">
+        <div class="flex justify-between items-center">
+          <b class="text-[#31295C]">${u}</b>
+
+          <div class="flex gap-2">
+            <button onclick="editarUnidade('${u}')">✏️</button>
+            <button onclick="excluirUnidade('${u}')" class="text-red-500">🗑️</button>
+          </div>
+        </div>
+
+        <div class="mt-2 space-y-1">
+          ${(unidades[u]||[]).map((m,i)=>`
+            <div class="flex justify-between text-sm">
+              <span>${m}</span>
+              <div class="flex gap-2">
+                <button onclick="editarMembro('${u}',${i})">✏️</button>
+                <button onclick="excluirMembro('${u}',${i})" class="text-red-500">🗑️</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+}
+
+window.editarUnidade = (u)=>{
+  const novo = prompt("Novo nome:",u);
+  if(!novo || novo===u) return;
+
+  unidades[novo]=unidades[u];
+  delete unidades[u];
+  save();
+};
+
+window.excluirUnidade = (u)=>{
+  if(!confirm("Excluir unidade?")) return;
+  delete unidades[u];
+  save();
+};
+
+window.editarMembro = (u,i)=>{
+  const novo = prompt("Novo nome:",unidades[u][i]);
+  if(!novo) return;
+  unidades[u][i]=novo;
+  save();
+};
+
+window.excluirMembro = (u,i)=>{
+  unidades[u].splice(i,1);
+  save();
+};
+
+/* HISTÓRICO (AJUSTADO VISUAL) */
 function renderHistorico(){
 
   const el=document.getElementById('historico');
@@ -325,55 +408,32 @@ window.excluir=async(i)=>{
   await save();
 };
 
-/* 🔥 AQUI FOI O AJUSTE DO DETALHE */
-window.abrirDetalhe = (i) => {
+/* DETALHE MELHORADO */
+window.abrirDetalhe=(i)=>{
 
-  const c = chamadas[i];
+  const c=chamadas[i];
 
-  let html = `
-    <h3 class="font-black text-lg mb-4 text-[#31295C]">
-      📅 ${c.data}
-    </h3>
-  `;
+  let html=`<h3 class="font-black mb-3">${c.data}</h3>`;
 
-  Object.keys(c.registros).forEach(u => {
+  Object.keys(c.registros).forEach(u=>{
 
-    html += `
-      <div class="border rounded-xl p-4 mb-3 bg-white">
+    html+=`<div class="border p-3 mb-3 rounded-xl">
+      <b>${u}</b>
 
-        <b class="text-[#31295C]">${u}</b>
-
-        <div class="mt-3 space-y-2">
-    `;
-
-    c.registros[u].forEach(m => {
-
-      const presente = m.presente;
-
-      html += `
-        <div class="
-          flex justify-between items-center
-          px-3 py-2 rounded-xl text-sm
-          ${presente ? 'bg-green-100 border border-green-300' : 'bg-red-50 border border-red-200'}
-        ">
-
-          <span class="font-medium">${m.nome}</span>
-
-          <span class="font-black">
-            ${presente ? '🟢 Presente' : '🔴 Ausente'}
-          </span>
-
-        </div>
-      `;
-    });
-
-    html += `
-        </div>
+      <div class="mt-2 space-y-1">
+        ${c.registros[u].map(m=>`
+          <div class="flex justify-between text-sm">
+            <span>${m.nome}</span>
+            <span class="font-bold ${m.presente?'text-green-600':'text-red-500'}">
+              ${m.presente ? '✔ Presente' : '✖ Ausente'}
+            </span>
+          </div>
+        `).join('')}
       </div>
-    `;
+    </div>`;
   });
 
-  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalContent').innerHTML=html;
   document.getElementById('modal').classList.remove('hidden');
 };
 
@@ -381,24 +441,14 @@ window.fecharModal=()=>{
   document.getElementById('modal').classList.add('hidden');
 };
 
-/* RELATÓRIO */
-window.baixarRelatorio=()=>{
-  let txt="";
-  chamadas.forEach(c=>txt+=c.data+"\n");
-
-  const blob=new Blob([txt],{type:'text/plain'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download="relatorio.txt";
-  a.click();
-};
-
-/* INIT */
+/* RENDER GERAL */
 function renderAll(){
   renderChamada();
   renderHistorico();
+  renderUnidades();
 }
 
+/* INIT */
 function init(){
   document.getElementById('mesInput').value=new Date().toISOString().slice(0,7);
   gerarCalendario();
