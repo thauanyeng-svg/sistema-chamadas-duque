@@ -133,12 +133,12 @@ body {
 
 <!-- MODAL -->
 <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
-  <div class="bg-white w-full max-w-2xl p-5 rounded-2xl">
+  <div class="bg-white w-full max-w-2xl p-5 rounded-2xl max-h-[90vh] overflow-hidden flex flex-col">
     <div class="flex justify-between mb-3">
       <h3 class="font-black">Detalhe da Chamada</h3>
       <button onclick="fecharModal()">✖</button>
     </div>
-    <div id="modalContent"></div>
+   <div id="modalContent" class="overflow-y-auto flex-1 pr-2"></div>
   </div>
 </div>
 
