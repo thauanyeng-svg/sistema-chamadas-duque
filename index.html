@@ -1,362 +1,540 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clube de Desbravadores Duque de Caxias</title>
 
-  import {
-    getFirestore,
-    doc,
-    setDoc,
-    getDoc
-  } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+  <script src="https://cdn.tailwindcss.com"></script>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDvT7SGiN7o-bsL_1Q8jeEhr-__ey9JCAk",
-    authDomain: "chamada-duque.firebaseapp.com",
-    projectId: "chamada-duque",
-    storageBucket: "chamada-duque.firebasestorage.app",
-    messagingSenderId: "460760553464",
-    appId: "1:460760553464:web:fffe6768e9d2617b10a80d"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  let unidades = {
-    'Leões': ['Ana', 'Carlos'],
-    'Águias': ['Julia', 'Fernanda']
-  };
-
-  let chamadas = [];
-
-  let dataSelecionada = null;
-
-  const meses = [
-    'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
-  ];
-
-  async function carregarBanco() {
-    const docRef = doc(db, "sistema", "dados");
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const dados = docSnap.data();
-
-      unidades = dados.unidades || {};
-      chamadas = dados.chamadas || [];
+  <style>
+    body {
+      background: linear-gradient(to bottom right, #f4f1ff, #ebe8ff);
+      font-family: Arial, sans-serif;
     }
 
-    renderUnidades();
-    renderChamada();
-    carregarRelatorios();
-  }
-
-  async function salvarBanco() {
-    await setDoc(doc(db, "sistema", "dados"), {
-      unidades,
-      chamadas
-    });
-  }
-
-  function iniciar() {
-    const hoje = new Date();
-
-    document.getElementById('mesInput').value =
-      `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
-
-    gerarCalendario();
-    renderUnidades();
-    renderChamada();
-    carregarRelatorios();
-
-    document.getElementById('mesInput')
-      .addEventListener('change', gerarCalendario);
-  }
-
-  function gerarCalendario() {
-    const valor = document.getElementById('mesInput').value;
-
-    const [ano, mes] = valor.split('-');
-
-    document.getElementById('tituloMes').innerText =
-      `${meses[parseInt(mes)-1]} de ${ano}`;
-
-    const calendario = document.getElementById('calendario');
-
-    calendario.innerHTML = `
-      <div class="font-bold text-[#31295C] py-2">Dom</div>
-      <div class="font-bold text-[#31295C] py-2">Seg</div>
-      <div class="font-bold text-[#31295C] py-2">Ter</div>
-      <div class="font-bold text-[#31295C] py-2">Qua</div>
-      <div class="font-bold text-[#31295C] py-2">Qui</div>
-      <div class="font-bold text-[#31295C] py-2">Sex</div>
-      <div class="font-bold text-[#31295C] py-2">Sáb</div>
-    `;
-
-    const primeiroDia = new Date(ano, mes - 1, 1).getDay();
-    const diasMes = new Date(ano, mes, 0).getDate();
-
-    for(let i = 0; i < primeiroDia; i++) {
-      calendario.innerHTML += '<div></div>';
+    .dia-btn {
+      background: #f8f6ff;
+      border: 1px solid rgba(49,41,92,.12);
+      color: #31295C;
+      transition: .2s;
     }
 
-    for(let dia = 1; dia <= diasMes; dia++) {
-      calendario.innerHTML += `
-        <button
-          onclick="selecionarDia(${dia}, this)"
-          class="dia-btn aspect-square rounded-2xl font-bold min-h-[50px] md:min-h-[75px] text-sm md:text-lg">
-          ${dia}
+    .dia-btn:hover {
+      background: #dccb8a;
+      transform: scale(1.03);
+    }
+
+    .dia-selecionado {
+      background: #31295C !important;
+      color: white !important;
+    }
+
+    .membro-ausente {
+      border: 2px solid #ef4444;
+      color: #ef4444;
+      background: white;
+    }
+
+    .membro-presente {
+      border: 2px solid #111827;
+      background: #bbf7d0;
+      color: #111827;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="max-w-7xl mx-auto p-4 md:p-6 relative z-10 space-y-6">
+
+  <div class="bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-6 border border-[#31295C]/10">
+    <div>
+      <h1 class="text-3xl md:text-4xl font-black text-[#31295C]">
+        Clube de Desbravadores
+      </h1>
+
+      <h2 class="text-2xl md:text-3xl font-black text-[#D5A514]">
+        DUQUE DE CAXIAS
+      </h2>
+
+      <p class="text-zinc-500 mt-2">
+        Sistema de chamadas e relatórios
+      </p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+    <div class="xl:col-span-2 bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-6 border border-[#31295C]/10">
+
+      <h2 class="text-3xl font-black text-[#31295C] mb-2">
+        📅 Calendário
+      </h2>
+
+      <p class="text-zinc-500 mb-5">
+        Selecione um dia para realizar a chamada
+      </p>
+
+      <input
+        type="month"
+        id="mesInput"
+        class="w-full border border-zinc-300 rounded-2xl p-4 text-lg mb-5"
+      />
+
+      <h3 id="tituloMes"
+          class="text-3xl font-black text-[#D5A514] mb-5"></h3>
+
+      <div id="calendario"
+           class="grid grid-cols-7 gap-2 md:gap-3 text-center">
+      </div>
+    </div>
+
+    <div class="bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-6 border border-[#31295C]/10">
+
+      <h2 class="text-3xl font-black text-[#31295C] mb-5">
+        📋 Chamada do Dia
+      </h2>
+
+      <div id="dataSelecionadaTexto"
+           class="bg-[#31295C] text-white px-4 py-3 rounded-2xl text-center font-bold mb-5">
+        Nenhum dia selecionado
+      </div>
+
+      <div id="listaChamada" class="space-y-5"></div>
+
+      <button onclick="salvarChamada()"
+              class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl text-lg font-bold transition">
+        💾 Salvar Chamada
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+    <div class="bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-6 border border-[#31295C]/10">
+
+      <h2 class="text-3xl font-black text-[#31295C] mb-1">
+        📊 Relatórios
+      </h2>
+
+      <p class="text-zinc-500 mb-5">
+        Consulte as chamadas salvas
+      </p>
+
+      <div class="flex gap-3 mb-5 flex-col md:flex-row">
+        <button onclick="carregarRelatorios()"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-bold">
+          Buscar Relatórios
         </button>
-      `;
-    }
+
+        <button onclick="baixarRelatorio()"
+                class="w-full bg-zinc-800 hover:bg-black text-white py-3 rounded-2xl font-bold">
+          ⬇️ Baixar Relatório
+        </button>
+      </div>
+
+      <div id="relatorios" class="space-y-4"></div>
+    </div>
+
+    <div class="bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-6 border border-[#31295C]/10">
+
+      <h2 class="text-3xl font-black text-[#31295C] mb-1">
+        🧭 Unidades
+      </h2>
+
+      <p class="text-zinc-500 mb-5">
+        Cadastro base dos desbravadores
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+        <input id="nomeUnidade"
+               placeholder="Nome da Unidade"
+               class="border border-zinc-300 rounded-2xl p-4" />
+
+        <input id="nomeMembro"
+               placeholder="Nome do Membro"
+               class="border border-zinc-300 rounded-2xl p-4" />
+      </div>
+
+      <button onclick="adicionarMembro()"
+              class="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-2xl font-bold mb-5">
+        ➕ Adicionar Membro
+      </button>
+
+      <div id="unidades" class="space-y-4"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDvT7SGiN7o-bsL_1Q8jeEhr-__ey9JCAk",
+  authDomain: "chamada-duque.firebaseapp.com",
+  projectId: "chamada-duque",
+  storageBucket: "chamada-duque.firebasestorage.app",
+  messagingSenderId: "460760553464",
+  appId: "1:460760553464:web:fffe6768e9d2617b10a80d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let unidades = {
+  'Leões': ['Ana', 'Carlos'],
+  'Águias': ['Julia', 'Fernanda']
+};
+
+let chamadas = [];
+
+let dataSelecionada = null;
+
+const meses = [
+  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
+];
+
+async function carregarBanco() {
+  const docRef = doc(db, "sistema", "dados");
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    const dados = docSnap.data();
+
+    unidades = dados.unidades || {};
+    chamadas = dados.chamadas || [];
   }
 
-  window.selecionarDia = function(dia, botao) {
-    document.querySelectorAll('.dia-btn').forEach(btn => {
-      btn.classList.remove('dia-selecionado');
-    });
+  renderUnidades();
+  renderChamada();
+  carregarRelatorios();
+}
 
-    botao.classList.add('dia-selecionado');
+async function salvarBanco() {
+  await setDoc(doc(db, "sistema", "dados"), {
+    unidades,
+    chamadas
+  });
+}
 
-    const valor = document.getElementById('mesInput').value;
-    const [ano, mes] = valor.split('-');
+function iniciar() {
+  const hoje = new Date();
 
-    dataSelecionada = `${ano}-${mes}-${String(dia).padStart(2,'0')}`;
+  document.getElementById('mesInput').value =
+    `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
 
-    document.getElementById('dataSelecionadaTexto').innerText =
-      `Chamada de ${dia}/${mes}/${ano}`;
+  gerarCalendario();
+  renderUnidades();
+  renderChamada();
+  carregarRelatorios();
+
+  document.getElementById('mesInput')
+    .addEventListener('change', gerarCalendario);
+}
+
+function gerarCalendario() {
+  const valor = document.getElementById('mesInput').value;
+
+  const [ano, mes] = valor.split('-');
+
+  document.getElementById('tituloMes').innerText =
+    `${meses[parseInt(mes)-1]} de ${ano}`;
+
+  const calendario = document.getElementById('calendario');
+
+  calendario.innerHTML = `
+    <div class="font-bold text-[#31295C] py-2">Dom</div>
+    <div class="font-bold text-[#31295C] py-2">Seg</div>
+    <div class="font-bold text-[#31295C] py-2">Ter</div>
+    <div class="font-bold text-[#31295C] py-2">Qua</div>
+    <div class="font-bold text-[#31295C] py-2">Qui</div>
+    <div class="font-bold text-[#31295C] py-2">Sex</div>
+    <div class="font-bold text-[#31295C] py-2">Sáb</div>
+  `;
+
+  const primeiroDia = new Date(ano, mes - 1, 1).getDay();
+  const diasMes = new Date(ano, mes, 0).getDate();
+
+  for(let i = 0; i < primeiroDia; i++) {
+    calendario.innerHTML += '<div></div>';
   }
 
-  function renderUnidades() {
-    const container = document.getElementById('unidades');
-    container.innerHTML = '';
+  for(let dia = 1; dia <= diasMes; dia++) {
+    calendario.innerHTML += `
+      <button
+        onclick="selecionarDia(${dia}, this)"
+        class="dia-btn aspect-square rounded-2xl font-bold min-h-[50px] md:min-h-[75px] text-sm md:text-lg">
+        ${dia}
+      </button>
+    `;
+  }
+}
 
-    Object.keys(unidades).forEach(unidade => {
-      container.innerHTML += `
-        <div class="border border-zinc-200 rounded-2xl p-4 bg-white shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-bold text-xl text-[#31295C]">${unidade}</h3>
+window.selecionarDia = function(dia, botao) {
+  document.querySelectorAll('.dia-btn').forEach(btn => {
+    btn.classList.remove('dia-selecionado');
+  });
 
-            <span class="bg-[#DCCB8A] text-[#31295C] px-3 py-1 rounded-full text-sm font-bold">
-              ${unidades[unidade].length} membros
-            </span>
-          </div>
+  botao.classList.add('dia-selecionado');
 
-          <div class="flex flex-wrap gap-2 mb-4">
-            ${unidades[unidade].map((membro, index) => `
-              <div class="bg-[#F4F1FF] border border-[#31295C]/10 text-[#31295C] px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-2">
-                <span>${membro}</span>
+  const valor = document.getElementById('mesInput').value;
+  const [ano, mes] = valor.split('-');
 
-                <button onclick="editarMembro('${unidade}', ${index})"
-                        class="text-blue-600 hover:text-blue-800">
-                  ✏️
-                </button>
+  dataSelecionada = `${ano}-${mes}-${String(dia).padStart(2,'0')}`;
 
-                <button onclick="excluirMembro('${unidade}', ${index})"
-                        class="text-red-600 hover:text-red-800">
-                  🗑️
-                </button>
-              </div>
-            `).join('')}
-          </div>
+  document.getElementById('dataSelecionadaTexto').innerText =
+    `Chamada de ${dia}/${mes}/${ano}`;
+}
 
-          <div class="flex gap-2 mt-3">
-            <button onclick="editarUnidade('${unidade}')"
-                    class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold">
-              ✏️ Editar Unidade
-            </button>
+function renderUnidades() {
+  const container = document.getElementById('unidades');
+  container.innerHTML = '';
 
-            <button onclick="excluirUnidade('${unidade}')"
-                    class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-xl text-sm font-bold">
-              🗑️ Excluir Unidade
-            </button>
-          </div>
+  Object.keys(unidades).forEach(unidade => {
+    container.innerHTML += `
+      <div class="border border-zinc-200 rounded-2xl p-4 bg-white shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-xl text-[#31295C]">${unidade}</h3>
+
+          <span class="bg-[#DCCB8A] text-[#31295C] px-3 py-1 rounded-full text-sm font-bold">
+            ${unidades[unidade].length} membros
+          </span>
         </div>
-      `;
-    });
+
+        <div class="flex flex-wrap gap-2 mb-4">
+          ${unidades[unidade].map((membro, index) => `
+            <div class="bg-[#F4F1FF] border border-[#31295C]/10 text-[#31295C] px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-2">
+              <span>${membro}</span>
+
+              <button onclick="editarMembro('${unidade}', ${index})"
+                      class="text-blue-600 hover:text-blue-800">
+                ✏️
+              </button>
+
+              <button onclick="excluirMembro('${unidade}', ${index})"
+                      class="text-red-600 hover:text-red-800">
+                🗑️
+              </button>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="flex gap-2 mt-3">
+          <button onclick="editarUnidade('${unidade}')"
+                  class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold">
+            ✏️ Editar Unidade
+          </button>
+
+          <button onclick="excluirUnidade('${unidade}')"
+                  class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-xl text-sm font-bold">
+            🗑️ Excluir Unidade
+          </button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+window.editarMembro = async function(unidade, index) {
+  const novoNome = prompt('Novo nome do membro:', unidades[unidade][index]);
+
+  if(!novoNome) return;
+
+  unidades[unidade][index] = novoNome;
+
+  await salvarBanco();
+
+  renderUnidades();
+  renderChamada();
+}
+
+window.excluirMembro = async function(unidade, index) {
+  if(!confirm('Excluir membro?')) return;
+
+  unidades[unidade].splice(index, 1);
+
+  await salvarBanco();
+
+  renderUnidades();
+  renderChamada();
+}
+
+window.editarUnidade = async function(unidade) {
+  const novoNome = prompt('Novo nome da unidade:', unidade);
+
+  if(!novoNome || novoNome === unidade) return;
+
+  unidades[novoNome] = unidades[unidade];
+  delete unidades[unidade];
+
+  await salvarBanco();
+
+  renderUnidades();
+  renderChamada();
+}
+
+window.excluirUnidade = async function(unidade) {
+  if(!confirm('Excluir unidade inteira?')) return;
+
+  delete unidades[unidade];
+
+  await salvarBanco();
+
+  renderUnidades();
+  renderChamada();
+}
+
+function renderChamada() {
+  const container = document.getElementById('listaChamada');
+  container.innerHTML = '';
+
+  Object.keys(unidades).forEach(unidade => {
+    container.innerHTML += `
+      <div class="border border-zinc-200 rounded-2xl p-4">
+        <h3 class="font-black text-xl text-[#31295C] mb-4">
+          ${unidade}
+        </h3>
+
+        <div class="grid grid-cols-1 gap-3">
+          ${unidades[unidade].map(membro => `
+            <button
+              onclick="togglePresenca(this)"
+              data-membro="${membro}"
+              class="membro-ausente rounded-2xl px-4 py-3 text-left font-bold transition-all">
+              ${membro}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+}
+
+window.togglePresenca = function(botao) {
+  botao.classList.toggle('membro-presente');
+  botao.classList.toggle('membro-ausente');
+}
+
+window.adicionarMembro = async function() {
+  const unidade = document.getElementById('nomeUnidade').value.trim();
+  const membro = document.getElementById('nomeMembro').value.trim();
+
+  if(!unidade || !membro) {
+    alert('Preencha os campos');
+    return;
   }
 
-  window.editarMembro = async function(unidade, index) {
-    const novoNome = prompt('Novo nome do membro:', unidades[unidade][index]);
-
-    if(!novoNome) return;
-
-    unidades[unidade][index] = novoNome;
-
-    await salvarBanco();
-
-    renderUnidades();
-    renderChamada();
+  if(!unidades[unidade]) {
+    unidades[unidade] = [];
   }
 
-  window.excluirMembro = async function(unidade, index) {
-    if(!confirm('Excluir membro?')) return;
-
-    unidades[unidade].splice(index, 1);
-
-    await salvarBanco();
-
-    renderUnidades();
-    renderChamada();
+  if(!unidades[unidade].includes(membro)) {
+    unidades[unidade].push(membro);
   }
 
-  window.editarUnidade = async function(unidade) {
-    const novoNome = prompt('Novo nome da unidade:', unidade);
+  await salvarBanco();
 
-    if(!novoNome || novoNome === unidade) return;
+  document.getElementById('nomeUnidade').value = '';
+  document.getElementById('nomeMembro').value = '';
 
-    unidades[novoNome] = unidades[unidade];
-    delete unidades[unidade];
+  renderUnidades();
+  renderChamada();
+}
 
-    await salvarBanco();
-
-    renderUnidades();
-    renderChamada();
+window.salvarChamada = async function() {
+  if(!dataSelecionada) {
+    alert('Selecione um dia no calendário');
+    return;
   }
 
-  window.excluirUnidade = async function(unidade) {
-    if(!confirm('Excluir unidade inteira?')) return;
+  const presentes = [];
+  const ausentes = [];
 
-    delete unidades[unidade];
+  document.querySelectorAll('[data-membro]').forEach(btn => {
+    const membro = btn.dataset.membro;
 
-    await salvarBanco();
+    if(btn.classList.contains('membro-presente')) {
+      presentes.push(membro);
+    } else {
+      ausentes.push(membro);
+    }
+  });
 
-    renderUnidades();
-    renderChamada();
-  }
+  chamadas.push({
+    data: dataSelecionada,
+    presentes,
+    ausentes
+  });
 
-  function renderChamada() {
-    const container = document.getElementById('listaChamada');
-    container.innerHTML = '';
+  await salvarBanco();
 
-    Object.keys(unidades).forEach(unidade => {
-      container.innerHTML += `
-        <div class="border border-zinc-200 rounded-2xl p-4">
-          <h3 class="font-black text-xl text-[#31295C] mb-4">
-            ${unidade}
+  carregarRelatorios();
+
+  alert('✅ Chamada salva com sucesso!');
+}
+
+function carregarRelatorios() {
+  const container = document.getElementById('relatorios');
+  container.innerHTML = '';
+
+  chamadas.slice().reverse().forEach(chamada => {
+    container.innerHTML += `
+      <div class="border border-zinc-200 rounded-2xl p-4 bg-white shadow-sm">
+        <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <h3 class="font-black text-[#31295C] text-lg">
+            ${chamada.data}
           </h3>
 
-          <div class="grid grid-cols-1 gap-3">
-            ${unidades[unidade].map(membro => `
-              <button
-                onclick="togglePresenca(this)"
-                data-membro="${membro}"
-                class="membro-ausente rounded-2xl px-4 py-3 text-left font-bold transition-all">
-                ${membro}
-              </button>
-            `).join('')}
-          </div>
+          <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-bold">
+            ${chamada.presentes.length} presentes
+          </span>
         </div>
-      `;
-    });
-  }
 
-  window.togglePresenca = function(botao) {
-    botao.classList.toggle('membro-presente');
-    botao.classList.toggle('membro-ausente');
-  }
-
-  window.adicionarMembro = async function() {
-    const unidade = document.getElementById('nomeUnidade').value.trim();
-    const membro = document.getElementById('nomeMembro').value.trim();
-
-    if(!unidade || !membro) {
-      alert('Preencha os campos');
-      return;
-    }
-
-    if(!unidades[unidade]) {
-      unidades[unidade] = [];
-    }
-
-    if(!unidades[unidade].includes(membro)) {
-      unidades[unidade].push(membro);
-    }
-
-    await salvarBanco();
-
-    document.getElementById('nomeUnidade').value = '';
-    document.getElementById('nomeMembro').value = '';
-
-    renderUnidades();
-    renderChamada();
-  }
-
-  window.salvarChamada = async function() {
-    if(!dataSelecionada) {
-      alert('Selecione um dia no calendário');
-      return;
-    }
-
-    const presentes = [];
-    const ausentes = [];
-
-    document.querySelectorAll('[data-membro]').forEach(btn => {
-      const membro = btn.dataset.membro;
-
-      if(btn.classList.contains('membro-presente')) {
-        presentes.push(membro);
-      } else {
-        ausentes.push(membro);
-      }
-    });
-
-    chamadas.push({
-      data: dataSelecionada,
-      presentes,
-      ausentes
-    });
-
-    await salvarBanco();
-
-    carregarRelatorios();
-
-    alert('✅ Chamada salva com sucesso!');
-  }
-
-  function carregarRelatorios() {
-    const container = document.getElementById('relatorios');
-    container.innerHTML = '';
-
-    chamadas.slice().reverse().forEach(chamada => {
-      container.innerHTML += `
-        <div class="border border-zinc-200 rounded-2xl p-4 bg-white shadow-sm">
-          <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
-            <h3 class="font-black text-[#31295C] text-lg">
-              ${chamada.data}
-            </h3>
-
-            <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-bold">
-              ${chamada.presentes.length} presentes
-            </span>
-          </div>
-
-          <div class="space-y-2 text-sm">
-            <p><strong>✅ Presentes:</strong> ${chamada.presentes.join(', ') || 'Nenhum'}</p>
-            <p><strong>❌ Ausentes:</strong> ${chamada.ausentes.join(', ') || 'Nenhum'}</p>
-          </div>
+        <div class="space-y-2 text-sm">
+          <p><strong>✅ Presentes:</strong> ${chamada.presentes.join(', ') || 'Nenhum'}</p>
+          <p><strong>❌ Ausentes:</strong> ${chamada.ausentes.join(', ') || 'Nenhum'}</p>
         </div>
-      `;
-    });
-  }
+      </div>
+    `;
+  });
+}
 
-  window.baixarRelatorio = function() {
-    let texto = 'RELATÓRIO DE CHAMADAS - DUQUE DE CAXIAS\n\n';
+window.baixarRelatorio = function() {
+  let texto = 'RELATÓRIO DE CHAMADAS - DUQUE DE CAXIAS\n\n';
 
-    chamadas.forEach(chamada => {
-      texto += `Data: ${chamada.data}\n`;
-      texto += `Presentes: ${chamada.presentes.join(', ')}\n`;
-      texto += `Ausentes: ${chamada.ausentes.join(', ')}\n`;
-      texto += `--------------------------------\n\n`;
-    });
+  chamadas.forEach(chamada => {
+    texto += `Data: ${chamada.data}\n`;
+    texto += `Presentes: ${chamada.presentes.join(', ')}\n`;
+    texto += `Ausentes: ${chamada.ausentes.join(', ')}\n`;
+    texto += `--------------------------------\n\n`;
+  });
 
-    const blob = new Blob([texto], { type: 'text/plain' });
-    const link = document.createElement('a');
+  const blob = new Blob([texto], { type: 'text/plain' });
+  const link = document.createElement('a');
 
-    link.href = URL.createObjectURL(blob);
-    link.download = 'relatorio-duque-de-caxias.txt';
-    link.click();
-  }
+  link.href = URL.createObjectURL(blob);
+  link.download = 'relatorio-duque-de-caxias.txt';
+  link.click();
+}
 
+window.addEventListener('DOMContentLoaded', async () => {
   await carregarBanco();
   iniciar();
+});
+
 </script>
+
+</body>
+</html>
+```
