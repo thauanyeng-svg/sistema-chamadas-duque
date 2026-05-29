@@ -7,6 +7,11 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&display=swap" rel="stylesheet">
+
 <style>
 body {
   background: linear-gradient(to bottom right, #f4f1ff, #ebe8ff);
@@ -123,22 +128,24 @@ body {
   <input type="date" id="ini" class="border p-2 rounded w-full mb-2"/>
   <input type="date" id="fim" class="border p-2 rounded w-full mb-2"/>
 
-  <button onclick="baixarRelatorio()" class="bg-black text-white px-4 py-3 rounded-xl w-full">
-    Baixar relatório
+  <button onclick="visualizarDados()" class="bg-[#31295C] text-white px-4 py-3 rounded-xl w-full">
+    Visualizar dados
   </button>
 
-</div>
+  <div id="resultadoRelatorio" class="mt-4 space-y-4"></div>
 
 </div>
 
 <!-- MODAL -->
 <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
   <div class="bg-white w-full max-w-2xl p-5 rounded-2xl max-h-[90vh] overflow-hidden flex flex-col">
-    <div class="flex justify-between mb-3">
-      <h3 class="font-black">Detalhe da Chamada</h3>
+
+    <div class="flex justify-end mb-3">
       <button onclick="fecharModal()">✖</button>
     </div>
-   <div id="modalContent" class="overflow-y-auto flex-1 pr-2"></div>
+
+    <div id="modalContent" class="overflow-y-auto flex-1 pr-2"></div>
+
   </div>
 </div>
 
@@ -168,6 +175,8 @@ const ref = doc(db, "sistema", "dados");
 let unidades = {};
 let chamadas = [];
 let dataSelecionada = null;
+let chamadaEditando = null;
+let modoEdicao = false;
 
 /* FIREBASE */
 onSnapshot(ref, snap => {
@@ -277,15 +286,17 @@ window.toggleUnidades=()=>{
 };
 
 /* SALVAR */
-window.salvarChamada=async()=>{
+window.salvarChamada = async()=>{
 
-  if(!dataSelecionada) return alert("Selecione data");
+  if(!dataSelecionada)
+    return alert("Selecione data");
 
-  const registros={};
+  const registros = {};
 
   document.querySelectorAll('[data-m]').forEach(b=>{
-    const u=b.dataset.u;
-    const m=b.dataset.m;
+
+    const u = b.dataset.u;
+    const m = b.dataset.m;
 
     if(!registros[u]) registros[u]=[];
 
@@ -295,13 +306,37 @@ window.salvarChamada=async()=>{
     });
   });
 
-  chamadas.push({data:dataSelecionada,registros});
+  const existente = chamadas.findIndex(
+    c => c.data === dataSelecionada
+  );
+
+  if(existente >= 0){
+
+    const confirmar = confirm(
+      "Já existe chamada nesta data. Deseja substituir?"
+    );
+
+    if(!confirmar) return;
+
+    chamadas[existente] = {
+      data:dataSelecionada,
+      registros
+    };
+
+  } else {
+
+    chamadas.push({
+      data:dataSelecionada,
+      registros
+    });
+  }
+
   await save();
 
-  alert("Salvo!");
+  alert("Chamada salva!");
 };
 
-/* UNIDADES (NOVO) */
+/* UNIDADES */
 window.addMembro = async ()=>{
 
   const u = document.getElementById('uNome').value.trim();
@@ -319,7 +354,6 @@ window.addMembro = async ()=>{
   document.getElementById('mNome').value='';
 };
 
-/* RENDER UNIDADES (NOVO) */
 function renderUnidades(){
 
   const el = document.getElementById('unidades');
@@ -381,12 +415,14 @@ window.excluirMembro = (u,i)=>{
   save();
 };
 
-/* HISTÓRICO (AJUSTADO VISUAL) */
+/* HISTÓRICO */
 function renderHistorico(){
 
   const el=document.getElementById('historico');
 
-  el.innerHTML=chamadas.map((c,i)=>`
+  el.innerHTML=[...chamadas]
+  .sort((a,b)=>b.data.localeCompare(a.data))
+  .map((c,i)=>`
 
     <div class="flex justify-between border p-2 rounded-xl mb-2">
 
@@ -408,37 +444,176 @@ window.excluir=async(i)=>{
   await save();
 };
 
-/* DETALHE MELHORADO */
+/* DETALHE COM EDIÇÃO */
 window.abrirDetalhe=(i)=>{
 
-  const c=chamadas[i];
+  chamadaEditando = i;
 
-  let html=`<h3 class="font-black mb-3">${c.data}</h3>`;
+  const c = chamadas[i];
+
+  let html = `
+
+    <div class="flex justify-between items-center mb-3">
+
+      <h3 class="font-black">${c.data}</h3>
+
+      <div class="flex gap-2">
+
+        <button
+          onclick="ativarEdicao()"
+          class="bg-yellow-400 px-3 py-1 rounded-lg text-sm font-bold">
+          ✏️ Editar
+        </button>
+
+        ${modoEdicao ? `
+          <button
+            onclick="salvarEdicao()"
+            class="bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-bold">
+            💾 Salvar
+          </button>
+        ` : ''}
+
+      </div>
+
+    </div>
+  `;
 
   Object.keys(c.registros).forEach(u=>{
 
-    html+=`<div class="border p-3 mb-3 rounded-xl">
-      <b>${u}</b>
+    html += `
+      <div class="border p-3 mb-3 rounded-xl">
 
-      <div class="mt-2 space-y-1">
-        ${c.registros[u].map(m=>`
-          <div class="flex justify-between text-sm">
-            <span>${m.nome}</span>
-            <span class="font-bold ${m.presente?'text-green-600':'text-red-500'}">
-              ${m.presente ? '✔ Presente' : '✖ Ausente'}
-            </span>
-          </div>
-        `).join('')}
+        <b>${u}</b>
+
+        <div class="mt-2 space-y-1">
+    `;
+
+    c.registros[u].forEach(m=>{
+
+      html += `
+        <div class="flex justify-between text-sm">
+
+          <span>${m.nome}</span>
+
+          <button
+            ${modoEdicao ? '' : 'disabled'}
+            onclick="toggleEdicao(this)"
+            data-presente="${m.presente}"
+            class="
+              status-btn
+              font-bold
+              px-2 py-1 rounded-lg
+              ${m.presente
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-600'}
+            ">
+
+            ${m.presente ? '✔ Presente' : '✖ Ausente'}
+
+          </button>
+
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
       </div>
-    </div>`;
+    `;
   });
 
-  document.getElementById('modalContent').innerHTML=html;
+  document.getElementById('modalContent').innerHTML = html;
   document.getElementById('modal').classList.remove('hidden');
 };
 
+/* ATIVAR EDIÇÃO */
+window.ativarEdicao = ()=>{
+
+  modoEdicao = true;
+
+  abrirDetalhe(chamadaEditando);
+};
+
+/* TOGGLE STATUS */
+window.toggleEdicao = (el)=>{
+
+  if(!modoEdicao) return;
+
+  const atual = el.dataset.presente === 'true';
+
+  el.dataset.presente = (!atual).toString();
+
+  if(atual){
+
+    el.innerText = '✖ Ausente';
+
+    el.classList.remove(
+      'bg-green-100',
+      'text-green-700'
+    );
+
+    el.classList.add(
+      'bg-red-100',
+      'text-red-600'
+    );
+
+  } else {
+
+    el.innerText = '✔ Presente';
+
+    el.classList.remove(
+      'bg-red-100',
+      'text-red-600'
+    );
+
+    el.classList.add(
+      'bg-green-100',
+      'text-green-700'
+    );
+  }
+};
+
+/* SALVAR EDIÇÃO */
+window.salvarEdicao = async()=>{
+
+  if(chamadaEditando === null) return;
+
+  const c = chamadas[chamadaEditando];
+
+  const botoes = document.querySelectorAll('.status-btn');
+
+  let contador = 0;
+
+  Object.keys(c.registros).forEach(u=>{
+
+    c.registros[u].forEach(m=>{
+
+      m.presente =
+        botoes[contador].dataset.presente === 'true';
+
+      contador++;
+    });
+
+  });
+
+  chamadas[chamadaEditando] = c;
+
+  await save();
+
+  modoEdicao = false;
+
+  abrirDetalhe(chamadaEditando);
+
+  alert('Chamada atualizada!');
+};
+
 window.fecharModal=()=>{
-  document.getElementById('modal').classList.add('hidden');
+
+  modoEdicao = false;
+  chamadaEditando = null;
+
+  document.getElementById('modal')
+    .classList.add('hidden');
 };
 
 /* RENDER GERAL */
@@ -456,7 +631,111 @@ function init(){
 
 init();
 
-</script>
+/* RELATÓRIOS */
+window.visualizarDados = ()=>{
 
+  const ini = document.getElementById('ini').value;
+  const fim = document.getElementById('fim').value;
+
+  if(!ini || !fim){
+    return alert("Selecione as datas");
+  }
+
+  const filtradas = chamadas.filter(c=>
+    c.data >= ini && c.data <= fim
+  );
+
+  const totalChamadas = filtradas.length;
+
+  const resultado = {};
+
+  filtradas.forEach(chamada=>{
+
+    Object.keys(chamada.registros).forEach(unidade=>{
+
+      if(!resultado[unidade]){
+        resultado[unidade] = {};
+      }
+
+      chamada.registros[unidade].forEach(membro=>{
+
+        if(!resultado[unidade][membro.nome]){
+          resultado[unidade][membro.nome] = 0;
+        }
+
+        if(membro.presente){
+          resultado[unidade][membro.nome]++;
+        }
+
+      });
+
+    });
+
+  });
+
+  const el = document.getElementById('resultadoRelatorio');
+
+  if(totalChamadas === 0){
+    el.innerHTML = `
+      <div class="border rounded-xl p-4 text-center">
+        Nenhuma chamada encontrada no período.
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <div class="bg-[#31295C] text-white p-3 rounded-xl font-bold">
+      Total de chamadas no período: ${totalChamadas}
+    </div>
+  `;
+
+  Object.keys(resultado).forEach(unidade=>{
+
+    html += `
+      <div class="border rounded-2xl p-4">
+
+        <h3 class="font-black text-lg text-[#31295C] mb-3">
+          ${unidade}
+        </h3>
+
+        <div class="space-y-2">
+    `;
+
+    Object.keys(resultado[unidade]).forEach(nome=>{
+
+      const presencas = resultado[unidade][nome];
+
+      html += `
+        <div class="flex justify-between border-b pb-1 text-sm">
+          <span>${nome}</span>
+          <span class="font-bold">
+            ${presencas}/${totalChamadas}
+          </span>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  el.innerHTML = html;
+};
+
+</script>
+<!-- RODAPÉ -->
+<div class="text-center py-6 text-[#31295C] text-sm font-semibold opacity-80">
+  <span class="italic tracking-wide">
+    Feito com 💜 por
+  </span>
+
+  <span class="text-2xl ml-1"
+    style="font-family: 'Parisienne', cursive;">
+    Thauany Erthal
+  </span>
+</div>
 </body>
 </html>
