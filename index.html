@@ -106,6 +106,17 @@ details,
 .dark-mode #rodape {
   color: #d1d5db !important;
 }
+.dark-mode .membro-ausente {
+  background: #374151;
+  color: white;
+  border: 2px solid #ef4444;
+}
+
+.dark-mode .membro-presente {
+  background: #14532d;
+  color: white;
+  border: 2px solid #22c55e;
+}
 </style>
 </head>
 
@@ -309,11 +320,22 @@ function gerarCalendario(){
 
 window.selecionar = (d,el)=>{
 
-  document.querySelectorAll('.dia-btn')
-    .forEach(b=>b.classList.remove('bg-[#31295C]','text-white'));
+document.querySelectorAll('.dia-btn')
+  .forEach(b=>{
+    b.style.background = '';
+    b.style.color = '';
+  });
 
-  el.classList.add('bg-[#31295C]','text-white');
+if(document.body.classList.contains('dark-mode')){
 
+  el.style.background = '#a855f7';
+  el.style.color = 'white';
+
+} else {
+
+  el.style.background = '#31295C';
+  el.style.color = 'white';
+}
   const v = document.getElementById('mesInput').value;
   const [a,m] = v.split('-');
 
