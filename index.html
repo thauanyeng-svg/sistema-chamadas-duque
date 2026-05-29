@@ -223,7 +223,11 @@ details,
   <div class="bg-white w-full max-w-2xl p-5 rounded-2xl max-h-[90vh] overflow-hidden flex flex-col">
 
     <div class="flex justify-end mb-3">
-      <button onclick="fecharModal()">✖</button>
+     <button
+  onclick="fecharModal()"
+  class="text-xl font-bold">
+  ✖
+</button>
     </div>
 
     <div id="modalContent" class="overflow-y-auto flex-1 pr-2"></div>
@@ -353,7 +357,10 @@ document.getElementById('mesInput').onchange=gerarCalendario;
 function renderChamada(){
 
   const el=document.getElementById('listaChamada');
+
   el.innerHTML='';
+
+  modoEdicao = false;
 
   Object.keys(unidades).forEach(u=>{
 
@@ -432,6 +439,7 @@ window.salvarChamada = async()=>{
   }
 
   await save();
+  renderAll();
 
   alert("Chamada salva!");
 };
@@ -442,18 +450,30 @@ window.addMembro = async ()=>{
   const u = document.getElementById('uNome').value.trim();
   const m = document.getElementById('mNome').value.trim();
 
-  if(!u || !m) return alert("Preencha tudo");
+  if(!u || !m){
+    return alert("Preencha tudo");
+  }
 
-  if(!unidades[u]) unidades[u]=[];
+  if(!unidades[u]){
+    unidades[u] = [];
+  }
 
-    unidades[u].push(m);
+  const existe = unidades[u].some(nome =>
+    nome.toLowerCase() === m.toLowerCase()
+  );
+
+  if(existe){
+    return alert("Membro já existe");
+  }
+
+  unidades[u].push(m);
 
   unidades[u] = ordenarLista(unidades[u]);
 
   await save();
 
-  document.getElementById('uNome').value='';
-  document.getElementById('mNome').value='';
+  document.getElementById('uNome').value = '';
+  document.getElementById('mNome').value = '';
 };
 
 function renderUnidades(){
@@ -469,8 +489,8 @@ function renderUnidades(){
           <b class="text-[#31295C]">${u}</b>
 
           <div class="flex gap-2">
-            <button onclick="editarUnidade('${u}')">✏️</button>
-            <button onclick="excluirUnidade('${u}')" class="text-red-500">🗑️</button>
+            <button onclick='editarUnidade(${JSON.stringify(u)})'>✏️</button>
+            <button onclick='excluirUnidade(${JSON.stringify(u)})' class="text-red-500">🗑️</button>
           </div>
         </div>
 
@@ -479,8 +499,8 @@ function renderUnidades(){
             <div class="flex justify-between text-sm">
               <span>${m}</span>
               <div class="flex gap-2">
-                <button onclick="editarMembro('${u}',${i})">✏️</button>
-                <button onclick="excluirMembro('${u}',${i})" class="text-red-500">🗑️</button>
+                <button onclick='editarMembro(${JSON.stringify(u)},${i})'>✏️</button>
+                <button onclick='excluirMembro(${JSON.stringify(u)},${i})' class="text-red-500">🗑️</button>
               </div>
             </div>
           `).join('')}
@@ -512,46 +532,75 @@ window.editarMembro = (u,i)=>{
   save();
 };
 
-window.excluirMembro = (u,i)=>{
+window.excluirMembro = async(u,i)=>{
+
+  const nome = unidades[u][i];
+
+  const confirmar = confirm(
+    `Excluir ${nome}?`
+  );
+
+  if(!confirmar) return;
+
   unidades[u].splice(i,1);
-  save();
+
+  await save();
 };
 
 /* HISTÓRICO */
 function renderHistorico(){
 
-  const el=document.getElementById('historico');
+  const el = document.getElementById('historico');
 
-  el.innerHTML=[...chamadas]
-  .sort((a,b)=>b.data.localeCompare(a.data))
-  .map((c,i)=>`
+  el.innerHTML = [...chamadas]
+    .sort((a,b)=>b.data.localeCompare(a.data))
+    .map(c => `
 
-    <div class="flex justify-between border p-2 rounded-xl mb-2">
+      <div class="flex justify-between border p-2 rounded-xl mb-2">
 
-      <button onclick="abrirDetalhe(${i})">
-        📅 ${c.data}
-      </button>
+        <button onclick='abrirDetalhe(${JSON.stringify(c.data)})'>
+          📅 ${c.data}
+        </button>
 
-      <button onclick="excluir(${i})" class="text-red-500">
-        ✖
-      </button>
+        <button
+          onclick='excluir(${JSON.stringify(c.data)})'
+          class="text-red-500">
+          ✖
+        </button>
 
-    </div>
+      </div>
 
-  `).join('');
+    `).join('');
 }
 
-window.excluir=async(i)=>{
-  chamadas.splice(i,1);
+window.excluir = async(data)=>{
+
+  const confirmar = confirm(
+    `Excluir chamada do dia ${data}?`
+  );
+
+  if(!confirmar) return;
+
+  chamadas = chamadas.filter(
+    c => c.data !== data
+  );
+
   await save();
+
+  renderHistorico();
+
+  fecharModal();
 };
 
-/* DETALHE COM EDIÇÃO */
-window.abrirDetalhe=(i)=>{
+window.abrirDetalhe = (data)=>{
 
-  chamadaEditando = i;
+  chamadaEditando = chamadas.findIndex(
+    c => c.data === data
+  );
 
-  const c = chamadas[i];
+  const c = chamadas[chamadaEditando];
+
+  if(!c) return;
 
   let html = `
 
@@ -635,7 +684,11 @@ window.ativarEdicao = ()=>{
 
   modoEdicao = true;
 
-  abrirDetalhe(chamadaEditando);
+  const data = chamadas[chamadaEditando]?.data;
+
+  if(data){
+    abrirDetalhe(data);
+  }
 };
 
 /* TOGGLE STATUS */
@@ -703,19 +756,23 @@ document.querySelectorAll('.status-btn').forEach(btn=>{
 
   await save();
 
+modoEdicao = false;
 
-  abrirDetalhe(chamadaEditando);
+abrirDetalhe(c.data);
 
-  alert('Chamada atualizada!');
+alert('Chamada atualizada!');
 };
 
-window.fecharModal=()=>{
+window.fecharModal = ()=>{
 
   modoEdicao = false;
   chamadaEditando = null;
 
   document.getElementById('modal')
     .classList.add('hidden');
+
+  document.getElementById('modalContent')
+    .innerHTML = '';
 };
 
 /* RENDER GERAL */
