@@ -16,6 +16,7 @@
 body {
   background: linear-gradient(to bottom right, #f4f1ff, #ebe8ff);
   font-family: Arial, sans-serif;
+  transition: background 0.3s, color 0.3s;
 }
 
 .tab {
@@ -46,6 +47,62 @@ body {
   background: white;
   border: 2px solid #ef4444;
 }
+.dark-mode {
+  background: linear-gradient(to bottom right, #111827, #1f2937);
+  color: white;
+}
+
+.dark-mode .bg-white {
+  background: #1f2937 !important;
+  color: white;
+  transition: all 0.3s;
+}
+
+.dark-mode .tab {
+  background: #374151;
+  color: white;
+}
+
+.dark-mode .tab.active {
+  background: #8b5cf6;
+}
+
+.dark-mode .dia-btn {
+  background: #374151;
+  color: white;
+  border-color: #4b5563;
+}
+
+.dark-mode input {
+  background: #374151;
+  color: white;
+  border-color: #4b5563;
+}
+
+.dark-mode details {
+  background: #111827;
+}
+
+.dark-mode .border {
+  border-color: #4b5563 !important;
+}
+
+.dark-mode summary,
+.dark-mode b,
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3 {
+  color: white !important;
+}
+.bg-white,
+.tab,
+.dia-btn,
+button,
+input,
+details,
+.border {
+  transition: all 0.3s ease;
+}
 </style>
 </head>
 
@@ -54,8 +111,19 @@ body {
 <div class="max-w-7xl mx-auto p-4 space-y-5">
 
 <!-- HEADER -->
-<div class="bg-white p-5 rounded-3xl shadow">
-  <h1 class="text-3xl font-black text-[#31295C]">Clube de Desbravadores</h1>
+<div class="flex justify-between items-center">
+
+  <h1 class="text-3xl font-black text-[#31295C]">
+    Clube de Desbravadores
+  </h1>
+
+  <button
+    onclick="toggleTema()"
+    class="bg-[#31295C] text-white px-4 py-2 rounded-xl">
+    🌙
+  </button>
+
+</div>
 
   <div class="flex flex-wrap gap-2 mt-4">
     <button class="tab active" onclick="abrirAba('chamada', event)">Chamada</button>
@@ -638,6 +706,20 @@ function init(){
 }
 
 init();
+/* TEMA ESCURO */
+window.toggleTema = ()=>{
+
+  document.body.classList.toggle('dark-mode');
+
+  const escuro =
+    document.body.classList.contains('dark-mode');
+
+  localStorage.setItem('temaEscuro', escuro);
+};
+
+if(localStorage.getItem('temaEscuro') === 'true'){
+  document.body.classList.add('dark-mode');
+}
 
 /* RELATÓRIOS */
 window.visualizarDados = ()=>{
