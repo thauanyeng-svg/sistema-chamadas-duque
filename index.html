@@ -598,9 +598,11 @@ window.abrirDetalhe=(i)=>{
           <span>${m.nome}</span>
 
           <button
-            ${modoEdicao ? '' : 'disabled'}
-            onclick="toggleEdicao(this)"
-            data-presente="${m.presente}"
+  ${modoEdicao ? '' : 'disabled'}
+  onclick="toggleEdicao(this)"
+  data-presente="${m.presente}"
+  data-unidade="${u}"
+  data-nome="${m.nome}"
             class="
               status-btn
               font-bold
@@ -682,21 +684,20 @@ window.salvarEdicao = async()=>{
 
   const c = chamadas[chamadaEditando];
 
-  const botoes = document.querySelectorAll('.status-btn');
+document.querySelectorAll('.status-btn').forEach(btn=>{
 
-  let contador = 0;
+  const unidade = btn.dataset.unidade;
+  const nome = btn.dataset.nome;
 
-  Object.keys(c.registros).forEach(u=>{
+  const membro = c.registros[unidade]
+    .find(m => m.nome === nome);
 
-    c.registros[u].forEach(m=>{
+  if(membro){
+    membro.presente =
+      btn.dataset.presente === 'true';
+  }
 
-      m.presente =
-        botoes[contador].dataset.presente === 'true';
-
-      contador++;
-    });
-
-  });
+});
 
   chamadas[chamadaEditando] = c;
 
