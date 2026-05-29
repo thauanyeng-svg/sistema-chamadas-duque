@@ -177,6 +177,13 @@ let chamadas = [];
 let dataSelecionada = null;
 let chamadaEditando = null;
 let modoEdicao = false;
+function ordenarLista(lista){
+  return [...lista].sort((a,b)=>
+    a.localeCompare(b,'pt-BR',{
+      sensitivity:'base'
+    })
+  );
+}
 
 /* FIREBASE */
 onSnapshot(ref, snap => {
@@ -262,7 +269,7 @@ function renderChamada(){
         <summary class="font-black">${u}</summary>
 
         <div class="mt-2 space-y-2">
-          ${(unidades[u]||[]).map(m=>`
+                   ${ordenarLista(unidades[u]||[]).map(m=>`
             <div onclick="toggle(this)"
               data-u="${u}" data-m="${m}"
               class="membro-ausente p-3 rounded-xl cursor-pointer">
@@ -346,7 +353,9 @@ window.addMembro = async ()=>{
 
   if(!unidades[u]) unidades[u]=[];
 
-  unidades[u].push(m);
+    unidades[u].push(m);
+
+  unidades[u] = ordenarLista(unidades[u]);
 
   await save();
 
@@ -373,7 +382,7 @@ function renderUnidades(){
         </div>
 
         <div class="mt-2 space-y-1">
-          ${(unidades[u]||[]).map((m,i)=>`
+                  ${ordenarLista(unidades[u]||[]).map((m,i)=>`
             <div class="flex justify-between text-sm">
               <span>${m}</span>
               <div class="flex gap-2">
@@ -600,7 +609,6 @@ window.salvarEdicao = async()=>{
 
   await save();
 
-  modoEdicao = false;
 
   abrirDetalhe(chamadaEditando);
 
