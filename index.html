@@ -594,11 +594,11 @@ window.excluir = async(data)=>{
 
 window.abrirDetalhe = (data)=>{
 
-  chamadaEditando = chamadas.findIndex(
-    c => c.data === data
-  );
+  chamadaEditando = data;
 
-  const c = chamadas[chamadaEditando];
+const c = chamadas.find(
+  c => c.data === data
+);
 
   if(!c) return;
 
@@ -684,11 +684,7 @@ window.ativarEdicao = ()=>{
 
   modoEdicao = true;
 
-  const data = chamadas[chamadaEditando]?.data;
-
-  if(data){
-    abrirDetalhe(data);
-  }
+  abrirDetalhe(chamadaEditando);
 };
 
 /* TOGGLE STATUS */
@@ -735,7 +731,11 @@ window.salvarEdicao = async()=>{
 
   if(chamadaEditando === null) return;
 
-  const c = chamadas[chamadaEditando];
+  const index = chamadas.findIndex(
+    c => c.data === chamadaEditando
+  );
+
+  const c = chamadas[index];
 
 document.querySelectorAll('.status-btn').forEach(btn=>{
 
@@ -752,7 +752,7 @@ document.querySelectorAll('.status-btn').forEach(btn=>{
 
 });
 
-  chamadas[chamadaEditando] = c;
+  chamadas[index] = c;
 
   await save();
 
